@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GUI", "GUI.vcxproj", "{391814C8-EAB2-42BE-A728-2AD6B997E719}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FunctionModule", "..\FunctionModule\FunctionModule.vcxproj", "{2AEE0335-562F-4C62-9425-3CD9825958FC}"
+EndProject
 Global
 	GlobalSection(SubversionScc) = preSolution
 		Svn-Managed = True
@@ -17,6 +19,10 @@ Global
 		{391814C8-EAB2-42BE-A728-2AD6B997E719}.Debug|Win32.Build.0 = Debug|Win32
 		{391814C8-EAB2-42BE-A728-2AD6B997E719}.Release|Win32.ActiveCfg = Release|Win32
 		{391814C8-EAB2-42BE-A728-2AD6B997E719}.Release|Win32.Build.0 = Release|Win32
+		{2AEE0335-562F-4C62-9425-3CD9825958FC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2AEE0335-562F-4C62-9425-3CD9825958FC}.Debug|Win32.Build.0 = Debug|Win32
+		{2AEE0335-562F-4C62-9425-3CD9825958FC}.Release|Win32.ActiveCfg = Release|Win32
+		{2AEE0335-562F-4C62-9425-3CD9825958FC}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
