@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FunctionModule.h"
+
 namespace GUI {
 
 	using namespace System;
@@ -9,11 +11,38 @@ namespace GUI {
 	using namespace System::Data;
 	using namespace System::Drawing;
 
+	using namespace FunctionModule;
+
 	/// <summary>
 	/// Form1 摘要
 	/// </summary>
 	public ref class Form1 : public System::Windows::Forms::Form
 	{
+	private:
+
+		static String^ NO_DEVICE_FOUND = gcnew String("No Device Found! PlugIn and Try Again!");
+		static String^ START_RANDOM_COLLECTION = gcnew String("BD2A00011385");
+		static int RET_FRAME_HEAD_LENGTH = 4;
+		static int RET_ERR_SUB_CODE_LENGTH = 2;
+
+		static String^ RET_SUCESS = "BD2A";
+		static String^ RET_ERROR = "BDF0";
+		static String^ TAG_NO_RESPONSE = "FFFF";
+		static String^ TAG_CONFLICT_RESPONSE = "FFF0";
+		static String^ TAG_ILLEGAL_RESPONSE = "FF00";
+		static String^ TAG_UNKNOWN_RESPONSE = "F000";
+		static String^ TAG_ERR_RESPONSE_IS = "标签返回错误码：";
+		static byte	   TAG_ERR_RESPONSE_IS_CODE = 0x01;
+
+		CP210x_STATUS nStatus;
+		ComPortDevice^ ComPort;
+
+		String^ strComPort;
+		String^ strRetHeadType;
+		String^ strErrSubCode;
+	
+		DWORD dwDeviceNum;
+
 	public:
 		Form1(void)
 		{
@@ -21,6 +50,14 @@ namespace GUI {
 			//
 			//TODO: 在此处添加构造函数代码
 			//
+
+			nStatus = 0xFFFF;
+			ComPort = gcnew ComPortDevice();
+			strComPort = gcnew String("");
+			strRetHeadType = gcnew String("");
+			strErrSubCode = gcnew String("");
+
+			dwDeviceNum = 0;
 		}
 
 	protected:
@@ -46,7 +83,7 @@ namespace GUI {
 	private: System::Windows::Forms::Label^  label2;
 	private: System::Windows::Forms::Label^  label3;
 	private: System::Windows::Forms::TextBox^  textBoxProcessBar;
-
+    private: System::Windows::Forms::Button^  btnStopCollect;
 
 
 
@@ -73,6 +110,7 @@ namespace GUI {
 			this->label2 = (gcnew System::Windows::Forms::Label());
 			this->label3 = (gcnew System::Windows::Forms::Label());
 			this->textBoxProcessBar = (gcnew System::Windows::Forms::TextBox());
+			this->btnStopCollect = (gcnew System::Windows::Forms::Button());
 			this->SuspendLayout();
 			// 
 			// label1
@@ -89,21 +127,24 @@ namespace GUI {
 			this->comboBoxComList->FormattingEnabled = true;
 			this->comboBoxComList->Location = System::Drawing::Point(71, 9);
 			this->comboBoxComList->Name = L"comboBoxComList";
-			this->comboBoxComList->Size = System::Drawing::Size(121, 20);
+			this->comboBoxComList->Size = System::Drawing::Size(313, 20);
 			this->comboBoxComList->TabIndex = 1;
+			this->comboBoxComList->DropDown += gcnew System::EventHandler(this, &Form1::comboBoxComList_DropDown);
+			this->comboBoxComList->SelectedIndexChanged += gcnew System::EventHandler(this, &Form1::comboBoxComList_SelectedIndexChanged);
 			// 
 			// btnOpenCom
 			// 
-			this->btnOpenCom->Location = System::Drawing::Point(214, 8);
+			this->btnOpenCom->Location = System::Drawing::Point(14, 47);
 			this->btnOpenCom->Name = L"btnOpenCom";
-			this->btnOpenCom->Size = System::Drawing::Size(75, 23);
+			this->btnOpenCom->Size = System::Drawing::Size(74, 23);
 			this->btnOpenCom->TabIndex = 2;
 			this->btnOpenCom->Text = L"打开端口";
 			this->btnOpenCom->UseVisualStyleBackColor = true;
+			this->btnOpenCom->Click += gcnew System::EventHandler(this, &Form1::btnOpenCom_Click);
 			// 
 			// btnCloseCom
 			// 
-			this->btnCloseCom->Location = System::Drawing::Point(309, 8);
+			this->btnCloseCom->Location = System::Drawing::Point(95, 47);
 			this->btnCloseCom->Name = L"btnCloseCom";
 			this->btnCloseCom->Size = System::Drawing::Size(75, 23);
 			this->btnCloseCom->TabIndex = 3;
@@ -115,18 +156,20 @@ namespace GUI {
 			this->textBox1->Location = System::Drawing::Point(13, 93);
 			this->textBox1->Multiline = true;
 			this->textBox1->Name = L"textBox1";
+			this->textBox1->ReadOnly = true;
 			this->textBox1->ScrollBars = System::Windows::Forms::ScrollBars::Vertical;
 			this->textBox1->Size = System::Drawing::Size(371, 255);
 			this->textBox1->TabIndex = 4;
 			// 
 			// btnStartCollect
 			// 
-			this->btnStartCollect->Location = System::Drawing::Point(139, 48);
+			this->btnStartCollect->Location = System::Drawing::Point(204, 47);
 			this->btnStartCollect->Name = L"btnStartCollect";
-			this->btnStartCollect->Size = System::Drawing::Size(114, 30);
+			this->btnStartCollect->Size = System::Drawing::Size(87, 23);
 			this->btnStartCollect->TabIndex = 5;
 			this->btnStartCollect->Text = L"开始采集";
 			this->btnStartCollect->UseVisualStyleBackColor = true;
+			this->btnStartCollect->Click += gcnew System::EventHandler(this, &Form1::btnStartCollect_Click);
 			// 
 			// progressBar1
 			// 
@@ -161,11 +204,21 @@ namespace GUI {
 			this->textBoxProcessBar->TabIndex = 9;
 			this->textBoxProcessBar->TextAlign = System::Windows::Forms::HorizontalAlignment::Center;
 			// 
+			// btnStopCollect
+			// 
+			this->btnStopCollect->Location = System::Drawing::Point(298, 47);
+			this->btnStopCollect->Name = L"btnStopCollect";
+			this->btnStopCollect->Size = System::Drawing::Size(87, 23);
+			this->btnStopCollect->TabIndex = 10;
+			this->btnStopCollect->Text = L"停止采集";
+			this->btnStopCollect->UseVisualStyleBackColor = true;
+			// 
 			// Form1
 			// 
 			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->ClientSize = System::Drawing::Size(397, 393);
+			this->Controls->Add(this->btnStopCollect);
 			this->Controls->Add(this->textBoxProcessBar);
 			this->Controls->Add(this->label3);
 			this->Controls->Add(this->label2);
@@ -178,11 +231,126 @@ namespace GUI {
 			this->Controls->Add(this->label1);
 			this->Name = L"Form1";
 			this->Text = L"随机数采集软件";
+			this->Load += gcnew System::EventHandler(this, &Form1::Form1_Load);
 			this->ResumeLayout(false);
 			this->PerformLayout();
 
 		}
 #pragma endregion
-	};
+	
+
+private: System::Void comboBoxComList_DropDown(System::Object^  sender, System::EventArgs^  e) {
+
+			 comboBoxComList->Items->Clear();
+			 nStatus = ComPort->ComPort_GetDeviceList();
+			 if(nStatus != CP210x_SUCCESS){
+				 MessageBox::Show(NO_DEVICE_FOUND);
+				 return;
+			 }
+			 for(int i = 0; ComPort->strDevList[i] != nullptr; i ++){
+				 comboBoxComList->Items->Add(ComPort->strDevList[i]);
+			 }
+
+		 }
+
+
+private: System::Void Form1_Load(System::Object^  sender, System::EventArgs^  e) {
+
+			 btnOpenCom->Enabled = false;
+			 btnCloseCom->Enabled = false;
+			 btnStartCollect->Enabled = false;
+			 btnStopCollect->Enabled = false;
+		 }
+
+
+private: System::Void comboBoxComList_SelectedIndexChanged(System::Object^  sender, System::EventArgs^  e) {
+
+			 if(comboBoxComList->SelectedItem->ToString() != nullptr){
+				 strComPort = comboBoxComList->SelectedItem->ToString();
+				 btnOpenCom->Enabled = true;
+			 }
+		 }
+
+
+private: System::Void btnOpenCom_Click(System::Object^  sender, System::EventArgs^  e) {
+
+			 bool bRet = false;
+
+			 if(ComPort->hDevHandle == 0){
+				 nStatus = ComPort->ComPort_Open(strComPort);
+				 if(CP210x_SUCCESS == nStatus){
+					 textBox1->AppendText("### Open COM Sucess!###");
+					 btnOpenCom->Enabled = false;
+					 btnCloseCom->Enabled = true;
+					 btnStartCollect->Enabled = true;
+					 
+				 }else{
+					 MessageBox::Show("Open COM Failed! Please ReConnect Device.");
+					 btnOpenCom->Enabled = false;
+					 btnCloseCom->Enabled = false;
+					 btnStartCollect->Enabled = false;
+					 btnStopCollect->Enabled = false;
+				 }
+			 }
+			 
+			 
+			 
+		 }
+private: System::Void btnStartCollect_Click(System::Object^  sender, System::EventArgs^  e) {
+
+			 nStatus = ComPort->ComPort_Write(START_RANDOM_COLLECTION);
+			 if(CP210x_SUCCESS != nStatus){
+				 MessageBox::Show("Send Collect Random CMD Failed!");
+				 return;
+			 }
+
+			 Start_RandomCollect();
+
+		 }
+
+	private: System::Void Start_RandomCollect(){
+
+			bRet = ComPort->ComPort_Read(RET_FRAME_HEAD_LENGTH);
+			if(!bRet){
+				MessageBox::Show("Read Data Failed!");
+				return;
+			}
+
+			strRetHeadType = Convert::ToString(ComPort->byRet[0], 16) + 
+				Convert::ToString(ComPort->byRet[1], 16);
+
+			Return_Data_Process(strRetHeadType);
+
+		 }
+
+	private: System::Void Return_Data_Process(String^ strRet){
+			 
+				 if(!strResault->Equals(RET_SUCESS)&&!strRetHeadType->Equals(RET_ERROR)){
+					 MessageBox::Show("Collect Random Unknown Err!");
+					 return;
+				 }
+				 if(strResault->Equals(RET_ERROR)){
+					 bRet = ComPort->ComPort_Read(RET_ERR_SUB_CODE_LENGTH);
+					 if(!bRet){
+						 MessageBox::Show("Read Err Sub Code Failed!");
+						 return;
+					 }
+
+					 if(TAG_ERR_RESPONSE_IS_CODE == ComPort->byRet[0]){				 
+						 MessageBox::Show(TAG_ERR_RESPONSE_IS + Convert::ToString(ComPort->byRet[1], 16));
+						 return
+					 }
+
+					 strErrSubCode = Convert::ToString(ComPort->byRet[0], 16) + 
+						 Convert::ToString(ComPort->byRet[1], 16);
+					 if(strResault->Equals(TAG_UNKNOWN_RESPONSE))
+				 }else{
+
+				 }
+			 
+			 }
+
+
+};
 }
 
