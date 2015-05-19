@@ -3,5 +3,9 @@
 // 特定于项目的包含文件
 
 #pragma once
+#include <Windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <vcclr.h>
 
 
